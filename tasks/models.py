@@ -159,6 +159,11 @@ class Task(models.Model):
         'Дата и время последней активности по задаче'
     )
 
+    subscribers = models.ManyToManyField(
+        Employee,
+        verbose_name='Подписчики на рассылку по задаче'
+    )
+
 
 class Comment(models.Model):
     author = models.ForeignKey(
