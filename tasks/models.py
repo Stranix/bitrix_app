@@ -49,12 +49,20 @@ class TaskStage(models.Model):
     btrx_stage_id = models.PositiveSmallIntegerField('ID стадии заявки')
 
     name = models.CharField('Стадия')
+    alias = models.CharField(
+        'Альяс',
+        null=True
+    )
 
 
 class TaskStatus(models.Model):
     btrx_status_id = models.PositiveSmallIntegerField('ID статуса заявки')
 
     name = models.CharField('Статус')
+    alias = models.CharField(
+        'Альяс',
+        null=True
+    )
 
 
 class Task(models.Model):
