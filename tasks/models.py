@@ -41,7 +41,7 @@ class Employee(models.Model):
     is_admin = models.BooleanField(
         'Администратор?',
         blank=True,
-        default=True
+        default=False
     )
 
 
