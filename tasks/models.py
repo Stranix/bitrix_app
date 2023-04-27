@@ -13,6 +13,10 @@ class Department(models.Model):
         on_delete=models.SET_NULL
     )
 
+    class Meta:
+        verbose_name = 'Отдел'
+        verbose_name_plural = 'Отделы'
+
     def __str__(self):
         return self.name
 
@@ -47,6 +51,10 @@ class Employee(models.Model):
         default=False
     )
 
+    class Meta:
+        verbose_name = 'Сотрудник'
+        verbose_name_plural = 'Сотрудники'
+
     def __str__(self):
         department_name = '-'
         if self.department:
@@ -62,6 +70,10 @@ class TaskStage(models.Model):
         'Альяс',
         null=True
     )
+
+    class Meta:
+        verbose_name = 'Стадия'
+        verbose_name_plural = 'Стадии'
 
     def __str__(self):
         return '{} - {} - {}'.format(
@@ -79,6 +91,10 @@ class TaskStatus(models.Model):
         'Альяс',
         null=True
     )
+
+    class Meta:
+        verbose_name = 'Статус'
+        verbose_name_plural = 'Статусы'
 
     def __str__(self):
         return '{} - {} - {}'.format(
@@ -203,6 +219,10 @@ class Task(models.Model):
         verbose_name='Подписчики на рассылку по задаче'
     )
 
+    class Meta:
+        verbose_name = 'Задача'
+        verbose_name_plural = 'Задачи'
+
     def __str__(self):
         return '{} - {}'.format(
             self.bitrix_id,
@@ -230,6 +250,10 @@ class Comment(models.Model):
     message = models.TextField('Текст')
 
     create_at = models.DateTimeField('Дата создания комментария')
+
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
 
     def __str__(self):
         return '{} - {} - {}'.format(
