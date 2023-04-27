@@ -13,6 +13,9 @@ class Department(models.Model):
         on_delete=models.SET_NULL
     )
 
+    def __str__(self):
+        return self.name
+
 
 class Employee(models.Model):
     full_name = models.CharField('ФИО', max_length=100)
@@ -44,6 +47,12 @@ class Employee(models.Model):
         default=False
     )
 
+    def __str__(self):
+        department_name = '-'
+        if self.department:
+            department_name = self.department.name
+        return f'{self.full_name} - {department_name}'
+
 
 class TaskStage(models.Model):
     btrx_stage_id = models.PositiveSmallIntegerField('ID стадии заявки')
@@ -54,6 +63,13 @@ class TaskStage(models.Model):
         null=True
     )
 
+    def __str__(self):
+        return '{} - {} - {}'.format(
+            self.btrx_stage_id,
+            self.alias,
+            self.name
+        )
+
 
 class TaskStatus(models.Model):
     btrx_status_id = models.PositiveSmallIntegerField('ID статуса заявки')
@@ -63,6 +79,13 @@ class TaskStatus(models.Model):
         'Альяс',
         null=True
     )
+
+    def __str__(self):
+        return '{} - {} - {}'.format(
+            self.btrx_status_id,
+            self.alias,
+            self.name
+        )
 
 
 class Task(models.Model):
@@ -180,6 +203,12 @@ class Task(models.Model):
         verbose_name='Подписчики на рассылку по задаче'
     )
 
+    def __str__(self):
+        return '{} - {}'.format(
+            self.bitrix_id,
+            self.subject
+        )
+
 
 class Comment(models.Model):
     author = models.ForeignKey(
@@ -201,3 +230,10 @@ class Comment(models.Model):
     message = models.TextField('Текст')
 
     create_at = models.DateTimeField('Дата создания комментария')
+
+    def __str__(self):
+        return '{} - {} - {}'.format(
+            self.author,
+            self.task.subject,
+            self.task.create_at
+        )
