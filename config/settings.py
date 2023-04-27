@@ -17,6 +17,8 @@ DEBUG = env.bool('DEBUG', False)
 
 DB_CONN_STR = env.str('DATABASE', 'sqlite:///db.sqlite3')
 
+BITRIX_TASK_HOOK = env.str('BITRIX_TASK_HOOK')
+
 
 # Application definition
 
