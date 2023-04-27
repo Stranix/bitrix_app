@@ -81,7 +81,11 @@ class Task(models.Model):
         db_index=True
     )
 
-    result_comment = models.TextField('Результат задачи')
+    result_comment = models.TextField(
+        'Результат задачи',
+        null=True,
+        blank=True
+    )
 
     creator = models.ForeignKey(
         Employee,
@@ -123,7 +127,11 @@ class Task(models.Model):
 
     group_id = models.IntegerField('Рабочая группа')
 
-    files_url = models.TextField('Ссылки на вложенные документы')
+    files_url = models.TextField(
+        'Ссылки на вложенные документы',
+        null=True,
+        blank=True
+    )
 
     create_at = models.DateTimeField('Дата и Время создания заявки')
 
