@@ -24,7 +24,7 @@ class Employee(models.Model):
     )
 
     btrx_id = models.PositiveIntegerField(
-        'Id сотрудника в телеграмме',
+        'Id сотрудника в Bitrix',
         null=True,
         blank=True
     )
