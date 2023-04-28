@@ -44,6 +44,7 @@ class BitrixTask(BaseModel):
     group_id: Optional[int] = Field(alias='GROUP_ID')
 
     duration_fact_time: Optional[int] = Field(alias='DURATION_FACT')
+    created_date: datetime.datetime = Field(alias='CREATED_DATE')
     closed_by_id: Optional[int] = Field(alias='CLOSED_BY')
     closed_date_time: Union[datetime.datetime, str] = Field(
         alias='CLOSED_DATE'
