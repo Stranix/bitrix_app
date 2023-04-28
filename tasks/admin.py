@@ -32,7 +32,11 @@ class TaskStatusAdmin(admin.ModelAdmin):
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    pass
+    raw_id_fields = (
+        'accomplices',
+        'watchers',
+        'subscribers',
+    )
 
 
 @admin.register(Comment)
