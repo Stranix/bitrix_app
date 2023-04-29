@@ -3,7 +3,6 @@ import dj_database_url
 from environs import Env
 from pathlib import Path
 
-
 env = Env()
 env.read_env()
 
@@ -18,7 +17,6 @@ DEBUG = env.bool('DEBUG', False)
 DB_CONN_STR = env.str('DATABASE', 'sqlite:///db.sqlite3')
 
 BITRIX_TASK_HOOK = env.str('BITRIX_TASK_HOOK')
-
 
 # Application definition
 
@@ -60,8 +58,28 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'config.wsgi.application'
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
 
+WSGI_APPLICATION = 'config.wsgi.application'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -78,7 +96,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 LANGUAGE_CODE = 'ru'
 
 TIME_ZONE = 'Europe/Moscow'
@@ -88,7 +105,6 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-
 
 DATABASES = {
     'default': dj_database_url.parse(DB_CONN_STR),
