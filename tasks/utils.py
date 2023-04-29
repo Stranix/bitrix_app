@@ -5,7 +5,7 @@ import requests
 from django.db.models import QuerySet
 
 from config import settings
-from tasks.models import TaskStage, TaskStatus, Employee
+from tasks.models import TaskStage, TaskStatus, Employee, Task
 from tasks.schemas.BitrixTaskSchema import BitrixTask
 
 logger = logging.getLogger(__name__)
@@ -101,7 +101,7 @@ def get_status_by_btrx_id(status_btrx_id: int) -> TaskStatus:
 # TODO получение ответственного из локальной бд
 # TODO получение соисполнителей из локальной бд
 # TODO получение наблюдателей из локальной бд
-def get_employee_by_bitrix_id(employee_btrx_id: int):
+def get_employee_by_bitrix_id(employee_btrx_id: int) -> Employee:
     logger.info('Запрос получения сотрудника с id %s', employee_btrx_id)
     try:
         return Employee.objects.get(btrx_id=employee_btrx_id)
@@ -119,3 +119,43 @@ def task_is_closed(task: BitrixTask) -> bool:
     return True
 
 
+def get_user_from_bitrix_api(user_bitrix_id: int) -> Employee:
+    logger.info(
+        'Получение неизвестного пользователя %s из Bitrix',
+        user_bitrix_id
+    )
+    method_api = 'user.get.json'
+    url = settings.BITRIX_USER_HOOK + method_api
+    params = {
+        'ID': user_bitrix_id
+    }
+
+    response = requests.get(url, params)
+    bitrix_api_response = response.json()
+    bitrix_user = bitrix_api_response['result'][0]
+    user_in_db = save_bitrix_user_in_db(bitrix_user)
+
+    return user_in_db
+
+
+def save_bitrix_user_in_db(user_from_bitrix: dict) -> Employee:
+    logger.info('Сохраняем нового сотрудника в базу')
+    user_full_name = '{} {}'.format(
+        user_from_bitrix['NAME'],
+        user_from_bitrix['LAST_NAME']
+    )
+
+    employee = Employee()
+    employee.btrx_id = int(user_from_bitrix['ID'])
+    employee.full_name = user_full_name
+    employee.save()
+
+    return employee
+
+
+def get_task_by_id(bitrix_task_id: int) -> Task:
+    logger.info('Получение задачи с id %s из базы', bitrix_task_id)
+    try:
+        return Task.objects.get(bitrix_id=bitrix_task_id)
+    except Task.DoesNotExist:
+        logger.error('Задачи с id %s не существует', bitrix_task_id)
