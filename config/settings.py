@@ -18,6 +18,8 @@ DB_CONN_STR = env.str('DATABASE', 'sqlite:///db.sqlite3')
 
 BITRIX_TASK_HOOK = env.str('BITRIX_TASK_HOOK')
 
+BITRIX_USER_HOOK = env.str('BITRIX_USER_HOOK')
+
 # Application definition
 
 INSTALLED_APPS = [
