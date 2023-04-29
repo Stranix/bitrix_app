@@ -2,8 +2,10 @@ import time
 import logging
 import pydantic
 import requests
+from django.db.models import QuerySet
 
 from config import settings
+from tasks.models import TaskStage, TaskStatus, Employee
 from tasks.schemas.BitrixTaskSchema import BitrixTask
 
 logger = logging.getLogger(__name__)
@@ -73,3 +75,45 @@ def _parse_task_from_bitrix_api_response(task: dict) -> BitrixTask:
 
     except pydantic.error_wrappers.ValidationError as err:
         logger.error(err.args)
+
+
+# TODO функция получения стадии по id
+def get_stage_by_btrx_id(stage_btrx_id: int) -> TaskStage:
+    logger.info('Запрос получения стадии с id %s', stage_btrx_id)
+    try:
+        return TaskStage.objects.get(btrx_stage_id=stage_btrx_id)
+    except TaskStage.DoesNotExist:
+        logger.error('Стадии с id %s не существует', stage_btrx_id)
+
+
+# TODO функция получения статуса по id
+def get_status_by_btrx_id(status_btrx_id: int) -> TaskStatus:
+    logger.info('Запрос получения статуса с id %s', status_btrx_id)
+    try:
+        return TaskStatus.objects.get(btrx_stage_id=status_btrx_id)
+    except TaskStage.DoesNotExist:
+        logger.error('Стадии с id %s не существует', status_btrx_id)
+
+
+# TODO проверка наличие создателя заявки в локальной бд
+# TODO получение ответственного из локальной бд
+# TODO получение соисполнителей из локальной бд
+# TODO получение наблюдателей из локальной бд
+def get_employee_by_bitrix_id(employee_btrx_id: int):
+    logger.info('Запрос получения сотрудника с id %s', employee_btrx_id)
+    try:
+        return Employee.objects.get(btrx_id=employee_btrx_id)
+    except Employee.DoesNotExist:
+        logger.error('Сотрудника с id %s не существует', employee_btrx_id)
+        # TODO попробовать получить по нему информацию из Bitrix
+
+
+def task_is_closed(task: BitrixTask) -> bool:
+    logger.info('Проверка задачи на закрытие')
+    logger.debug('closed_by_id - %s', task.closed_by_id)
+    logger.debug('task.closed_date_time - %s', task.closed_date_time)
+    if not task.closed_by_id or not task.closed_date_time:
+        return False
+    return True
+
+
