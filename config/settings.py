@@ -63,7 +63,8 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'format': '[{asctime}] {levelname}: {name}:{funcName} - {message}',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
             'style': '{',
         },
     },
