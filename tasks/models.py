@@ -107,6 +107,8 @@ class TaskStatus(models.Model):
 class Task(models.Model):
     bitrix_id = models.PositiveIntegerField(
         'ID задачи в Bitrix',
+        primary_key=True,
+        unique=True,
         db_index=True
     )
 
