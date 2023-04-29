@@ -16,10 +16,12 @@ def fetch_bitrix_tasks_by_responsible_employee(
         start_date: str = '2021-08-01',
         limit_task_per_page: int = 25
 ) -> list[BitrixTask]:
-    logger.info('Start fetch')
+    logger.info('Старт получения сотрудников с Bitrix API')
 
     start_page = 1
-    url = settings.BITRIX_TASK_HOOK
+
+    api_method = 'task.item.list.json'
+    url = settings.BITRIX_TASK_HOOK + api_method
 
     params = {
         'ORDER[]': '',
@@ -54,12 +56,12 @@ def fetch_bitrix_tasks_by_responsible_employee(
         current_page += 1
         time.sleep(0.5)
 
-    logger.info('End fetch')
+    logger.info('Закончили получение сотрудников с Bitrix API')
     return tasks
 
 
 def _parse_task_from_bitrix_api_response(task: dict) -> BitrixTask:
-    logger.info('Start parse task')
+    logger.info('Старт парсинга задачи - %s', task['ID'])
     try:
         exclude_stage_id = ['2957', '2121']
         exclude_real_status_id = ['4']
@@ -70,7 +72,7 @@ def _parse_task_from_bitrix_api_response(task: dict) -> BitrixTask:
         if task['REAL_STATUS'] in exclude_real_status_id:
             task['REAL_STATUS'] = '0'
 
-        logger.info('End parse task')
+        logger.info('Спарсили')
         return BitrixTask(**task)
 
     except pydantic.error_wrappers.ValidationError as err:
@@ -90,7 +92,7 @@ def get_stage_by_btrx_id(stage_btrx_id: int) -> TaskStage:
 def get_status_by_btrx_id(status_btrx_id: int) -> TaskStatus:
     logger.info('Запрос получения статуса с id %s', status_btrx_id)
     try:
-        return TaskStatus.objects.get(btrx_stage_id=status_btrx_id)
+        return TaskStatus.objects.get(btrx_status_id=status_btrx_id)
     except TaskStage.DoesNotExist:
         logger.error('Стадии с id %s не существует', status_btrx_id)
 
