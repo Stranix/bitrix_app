@@ -164,12 +164,10 @@ class Task(models.Model):
         db_index=True
     )
 
-    parent_task = models.ForeignKey(
-        'self',
-        verbose_name='Родительская задача',
+    parent_task = models.IntegerField(
+        'Родительская задача',
         null=True,
-        blank=True,
-        on_delete=models.SET_NULL
+        blank=True
     )
 
     group_id = models.IntegerField('Рабочая группа')
