@@ -1,12 +1,10 @@
 import time
 import logging
-import pydantic
 import requests
-from django.db.models import QuerySet
 
 from config import settings
 from tasks.models import TaskStage, TaskStatus, Employee, Task
-from tasks.schemas.BitrixTaskSchema import BitrixTask
+from tasks.serializers import BitrixTaskSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +13,7 @@ def fetch_bitrix_tasks_by_responsible_employee(
         employee_bitrix_id: int,
         start_date: str = '2021-08-01',
         limit_task_per_page: int = 25
-) -> list[BitrixTask]:
+) -> list[BitrixTaskSerializer]:
     logger.info('Старт получения сотрудников с Bitrix API')
 
     start_page = 1
@@ -47,9 +45,9 @@ def fetch_bitrix_tasks_by_responsible_employee(
         bitrix_api_response = response.json()
 
         for bitrix_task in bitrix_api_response['result']:
-            tasks.append(
-                _parse_task_from_bitrix_api_response(bitrix_task)
-            )
+            task_serializer = _parse_task_from_bitrix_api_response(bitrix_task)
+            if task_serializer:
+                tasks.append(task_serializer)
 
         if not bitrix_api_response.get('next', False):
             break
@@ -60,23 +58,55 @@ def fetch_bitrix_tasks_by_responsible_employee(
     return tasks
 
 
-def _parse_task_from_bitrix_api_response(task: dict) -> BitrixTask:
+def _parse_task_from_bitrix_api_response(
+        task: dict) -> BitrixTaskSerializer | None:
     logger.info('Старт парсинга задачи - %s', task['ID'])
-    try:
-        exclude_stage_id = ['2957', '2121']
-        exclude_real_status_id = ['4']
+    if get_task_by_id(int(task['ID'])):
+        logger.warning('Задача уже есть в базе. Пропускаем')
+        return
+    exclude_stage_id = ['2957', '2121']
+    exclude_real_status_id = ['4']
 
-        if task['STAGE_ID'] in exclude_stage_id:
-            task['STAGE_ID'] = '0'
+    if task['STAGE_ID'] in exclude_stage_id:
+        task['STAGE_ID'] = '0'
 
-        if task['REAL_STATUS'] in exclude_real_status_id:
-            task['REAL_STATUS'] = '0'
+    if task['REAL_STATUS'] in exclude_real_status_id:
+        task['REAL_STATUS'] = '0'
 
+    bitrix_task = {
+        'bitrix_id': task['ID'],
+        'subject': task['TITLE'],
+        'description': task['DESCRIPTION'],
+        'stage': task['STAGE_ID'],
+        'status': task['REAL_STATUS'],
+        'result_comment': '',
+        'creator': task['CREATED_BY'],
+        'responsible': task['RESPONSIBLE_ID'],
+        'accomplices': task['ACCOMPLICES'],
+        'watchers': task['AUDITORS'],
+        'parent_task': task['PARENT_ID'],
+        'group_id': task['GROUP_ID'],
+        'files_url': '',
+        'create_at': task['CREATED_DATE'],
+        'start_at': task['CREATED_DATE'],
+        'duration_fact_time': task['DURATION_FACT'],
+        'last_activity_date': task['ACTIVITY_DATE'],
+        'subscribers': task['AUDITORS'],
+    }
+
+    closed_by_id = int(task['CLOSED_BY'])
+
+    if closed_by_id:
+        bitrix_task['closed_by'] = closed_by_id
+        bitrix_task['closed_date_time'] = task['CLOSED_DATE']
+
+    serializer = BitrixTaskSerializer(data=bitrix_task)
+
+    if serializer.is_valid():
         logger.info('Спарсили')
-        return BitrixTask(**task)
+        return serializer
 
-    except pydantic.error_wrappers.ValidationError as err:
-        logger.error(err.args)
+    logger.error('Ошибка парсинга %s', serializer.errors)
 
 
 # TODO функция получения стадии по id
@@ -110,7 +140,7 @@ def get_employee_by_bitrix_id(employee_btrx_id: int) -> Employee:
         # TODO попробовать получить по нему информацию из Bitrix
 
 
-def task_is_closed(task: BitrixTask) -> bool:
+def task_is_closed(task: Task) -> bool:
     logger.info('Проверка задачи на закрытие')
     logger.debug('closed_by_id - %s', task.closed_by_id)
     logger.debug('task.closed_date_time - %s', task.closed_date_time)
