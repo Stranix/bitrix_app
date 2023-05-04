@@ -56,10 +56,7 @@ class Employee(models.Model):
         verbose_name_plural = 'Сотрудники'
 
     def __str__(self):
-        department_name = '-'
-        if self.department:
-            department_name = self.department.name
-        return f'{self.full_name} - {department_name}'
+        return self.full_name
 
 
 class TaskStage(models.Model):
