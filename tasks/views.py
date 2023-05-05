@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from tasks import serializers
 from tasks.models import Task
 from tasks.models import Employee
-from tasks.utils import fetch_task_from_bitrix
+from tasks.utils import fetch_task_from_bitrix, check_changes_in_task
 
 logger = logging.getLogger(__name__)
 
@@ -57,3 +57,16 @@ def new_task_action(request):
         logger.info('Отправил уведомление в телеграм')
 
     return Response({'status': 'ok'})
+
+
+@api_view(['POST'])
+def update_task_action(request):
+    task_event = request.data.get('event')
+    if task_event == 'ONTASKUPDATE':
+        logger.info('Произошло обновление задачи')
+        check_changes_in_task(
+            int(request.data.get('data[FIELDS_AFTER][ID]'))
+        )
+
+    if task_event == 'ONTASKCOMMENTADD':
+        logger.info('Добавлен комментарий к задаче')
