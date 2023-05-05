@@ -20,6 +20,8 @@ BITRIX_TASK_HOOK = env.str('BITRIX_TASK_HOOK')
 
 BITRIX_USER_HOOK = env.str('BITRIX_USER_HOOK')
 
+BITRIX_GET_TASK_HOOK = env.str('BITRIX_GET_TASK_HOOK')
+
 # Application definition
 
 INSTALLED_APPS = [

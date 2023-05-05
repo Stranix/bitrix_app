@@ -45,6 +45,9 @@ def fetch_bitrix_tasks_by_responsible_employee(
         bitrix_api_response = response.json()
 
         for bitrix_task in bitrix_api_response['result']:
+            if get_task_by_id(int(bitrix_task['ID'])):
+                logger.warning('Задача уже есть в базе. Пропускаем')
+                continue
             task_serializer = _parse_task_from_bitrix_api_response(bitrix_task)
             if task_serializer:
                 tasks.append(task_serializer)
@@ -61,9 +64,7 @@ def fetch_bitrix_tasks_by_responsible_employee(
 def _parse_task_from_bitrix_api_response(
         task: dict) -> BitrixTaskSerializer | None:
     logger.info('Старт парсинга задачи - %s', task['ID'])
-    if get_task_by_id(int(task['ID'])):
-        logger.warning('Задача уже есть в базе. Пропускаем')
-        return
+
     exclude_stage_id = ['2957', '2121']
     exclude_real_status_id = ['4']
 
@@ -189,3 +190,38 @@ def get_task_by_id(bitrix_task_id: int) -> Task:
         return Task.objects.get(bitrix_id=bitrix_task_id)
     except Task.DoesNotExist:
         logger.error('Задачи с id %s не существует', bitrix_task_id)
+
+
+def get_bitrix_id_rnd_employees() -> list[int]:
+    logger.info('Получение сотрудников отдела R&D')
+    rnd_employees = Employee.objects.filter(department_id=1)
+    bitrix_ids = [emp.btrx_id for emp in rnd_employees]
+    logger.debug('Список bitrix_id сотрудников R&D: %s', bitrix_ids)
+    return bitrix_ids
+
+
+def fetch_task_from_bitrix(task_id: int):
+    if get_task_by_id(task_id):
+        logger.error('Такая задача уже есть в БД')
+        return
+    method_api = 'task.item.getdata.json'
+    url = settings.BITRIX_GET_TASK_HOOK + method_api
+    params = {
+        'TASKID': task_id
+    }
+    response = requests.get(url, params)
+    response.raise_for_status()
+    bitrix_task_response = response.json()['result']
+    task_responsible = int(bitrix_task_response['RESPONSIBLE_ID'])
+
+    if check_responsible_rnd_depart(task_responsible):
+        serializer = _parse_task_from_bitrix_api_response(bitrix_task_response)
+        return serializer
+
+
+def check_responsible_rnd_depart(task_responsible: int) -> bool:
+    if task_responsible not in get_bitrix_id_rnd_employees():
+        logger.warning('Задача не в нашей зоне ответственности. Пропускаем')
+        return False
+    logger.info('Задача в нашей зоне ответственности')
+    return True
