@@ -64,9 +64,11 @@ def update_task_action(request):
     task_event = request.data.get('event')
     if task_event == 'ONTASKUPDATE':
         logger.info('Произошло обновление задачи')
-        check_changes_in_task(
-            int(request.data.get('data[FIELDS_AFTER][ID]'))
-        )
+        bitrix_task_id = int(request.data['data[FIELDS_AFTER][ID]'])
+        check_changes_in_task(bitrix_task_id)
+        return Response({'status': 'task updated'})
 
     if task_event == 'ONTASKCOMMENTADD':
         logger.info('Добавлен комментарий к задаче')
+
+    return Response({'error': 'something wrong'})

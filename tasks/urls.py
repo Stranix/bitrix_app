@@ -9,7 +9,7 @@ urlpatterns = [
     path('task/', views.TasksList.as_view()),
     path('task/<int:pk>/', views.TaskDetail.as_view()),
     path('task/hook/new/', views.new_task_action),
-    path('task/hook/update/', views.update_task_action)
+    path('task/hook/update/', views.update_task_action),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

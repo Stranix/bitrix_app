@@ -5,6 +5,7 @@ import requests
 from config import settings
 from tasks.models import TaskStage, TaskStatus, Employee, Task
 from tasks.serializers import BitrixTaskSerializer
+from tasks.serializers import TaskDetailSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -95,10 +96,10 @@ def _parse_task_from_bitrix_api_response(
         'subscribers': task['AUDITORS'],
     }
 
-    closed_by_id = int(task['CLOSED_BY'])
+    closed_by_id = task['CLOSED_BY']
 
     if closed_by_id:
-        bitrix_task['closed_by'] = closed_by_id
+        bitrix_task['closed_by'] = int(closed_by_id)
         bitrix_task['closed_date_time'] = task['CLOSED_DATE']
 
     serializer = BitrixTaskSerializer(data=bitrix_task)
@@ -200,14 +201,11 @@ def get_bitrix_id_rnd_employees() -> list[int]:
     return bitrix_ids
 
 
-def fetch_task_from_bitrix(task_id: int):
-    if get_task_by_id(task_id):
-        logger.error('Такая задача уже есть в БД')
-        return
+def get_task_info_from_bitrix(bitrix_task_id: int):
     method_api = 'task.item.getdata.json'
     url = settings.BITRIX_GET_TASK_HOOK + method_api
     params = {
-        'TASKID': task_id
+        'TASKID': bitrix_task_id
     }
     response = requests.get(url, params)
     response.raise_for_status()
@@ -215,6 +213,17 @@ def fetch_task_from_bitrix(task_id: int):
     task_responsible = int(bitrix_task_response['RESPONSIBLE_ID'])
 
     if check_responsible_rnd_depart(task_responsible):
+        return bitrix_task_response
+
+
+def fetch_task_from_bitrix(task_id: int):
+    if get_task_by_id(task_id):
+        logger.error('Такая задача уже есть в БД')
+        return
+
+    bitrix_task_response = get_task_info_from_bitrix(task_id)
+
+    if bitrix_task_response:
         serializer = _parse_task_from_bitrix_api_response(bitrix_task_response)
         return serializer
 
@@ -225,3 +234,34 @@ def check_responsible_rnd_depart(task_responsible: int) -> bool:
         return False
     logger.info('Задача в нашей зоне ответственности')
     return True
+
+
+def check_changes_in_task(bitrix_task_id: int):
+    bitrix_task_response = get_task_info_from_bitrix(bitrix_task_id)
+    task_in_bitrix = _parse_task_from_bitrix_api_response(bitrix_task_response)
+    task_in_db = get_task_by_id(bitrix_task_id)
+
+    if task_in_bitrix:
+        # TODO проверять исполнителя на изменение
+        if task_in_db.responsible.btrx_id != task_in_bitrix.data.get('responsible'):
+            logger.info('У задачи изменился исполнитель')
+        # TODO проверять список наблюдателей на изменение
+
+        # TODO проверять тему задачи на изменение
+        if task_in_db.subject != task_in_bitrix.data.get('subject'):
+            logger.info('Произошло изменение темы задачи')
+
+        # TODO проверять описание задачи на изменение
+        if task_in_db.description != task_in_bitrix.data.get('description'):
+            logger.info('Произошло изменение описания задачи')
+
+        # TODO проверять изменение статуса задачи
+        if task_in_db.status.btrx_status_id != task_in_bitrix.data.get('status'):
+            logger.info('Произошла смена статуса задачи')
+
+        # TODO проверять изменения канбан стадии задачи
+        if task_in_db.stage.btrx_stage_id != task_in_bitrix.data.get('stage'):
+            logger.info('Произошла смена стадии задачи')
+
+    task_in_bitrix.is_valid(raise_exception=True)
+    task_in_bitrix.update(task_in_db, task_in_bitrix.validated_data)

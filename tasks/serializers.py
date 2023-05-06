@@ -59,7 +59,7 @@ class TaskDetailSerializer(serializers.ModelSerializer):
 
 
 class BitrixTaskSerializer(serializers.ModelSerializer):
-    bitrix_id = serializers.IntegerField(validators=None)
+    bitrix_id = serializers.IntegerField()
 
     stage = serializers.SlugRelatedField(
         queryset=TaskStage.objects,
